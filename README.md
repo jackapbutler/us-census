@@ -21,12 +21,36 @@ There are three main pieces of this project:
 2. [Data Processing script](processing.py)
 
    - This handles all the loading, processing and transformations associated with the project.
-   - You can run the script by executing `python3 -m processing --name my_baseline` to create a new training/test set under the `data/processing/my-baseline` folder.
+   - Once executed it will run the following:
+
+     a) Create a report of missing values within the raw dataset.
+
+     b) Encode the salary threshold labels into a `[0,1]` format.
+
+     c) One-hot encode and scale the relevant feature variables.
+
+     d) Split and Save the train and test datasets to a folder called `data/processed/<tag>/`.
+
+```shell
+python3 -m processing --tag my_baseline
+```
 
 3. [Modelling](modelling.py)
 
-   - scfsc
-   - sdcsa
+   - This handles all of the model training and evaluation associated with this project.
+   - Once executed it will run the following:
+
+     a) Load the training and test datasets from the local storage `data/processed/<data>` folder.
+
+     b) Fit the name `--algo` model to the dataset (see `MODELS` for a range of choices).
+
+     c) Evaluate the training and test performance and save the results to `results/<tag>.json`.
+
+     d) Save the trained model under a directory called `models/<tag>.pkl`
+
+```shell
+python3 -m modelling --data baseline --algo Logistic --tag baseline_model
+```
 
 # Code Formatting
 

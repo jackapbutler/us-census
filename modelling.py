@@ -4,6 +4,7 @@ import argparse
 import os
 from typing import Dict
 import pickle
+import json
 import pandas as pd
 import numpy as np
 import sklearn.metrics as sk_metrics
@@ -84,7 +85,7 @@ class Experiment:
         print(f"Fitting algorithm {self.algorithm_name} to the data.")
         self.trained_model = self.algorithm.fit(self.X_tr, self.y_tr)
 
-        print("Using the trained model to predict the test set.")
+        print("\n Using the trained model to predict the test set.")
         self.y_te_pred = self.trained_model.predict(self.X_te)
         self.y_tr_pred = self.trained_model.predict(self.X_tr)
 
@@ -117,9 +118,7 @@ class Experiment:
         preds: np.ndarray,
     ) -> Dict:
         """Generate a dictionary of common classification metrics"""
-        print(preds[0])
-        print(truth[0])
-        return {name: metric(truth, preds) for name, metric in METRICS.items()}
+        return {name: str(metric(truth, preds)) for name, metric in METRICS.items()}
 
     def save_results(self):
         """Saving the experiment results to a certain folder"""
@@ -131,14 +130,14 @@ class Experiment:
         }
         self.save_dict_to_json(results_dict)
 
-    def save_dict_to_json(self, dict: Dict):
+    def save_dict_to_json(self, j_dict: Dict):
         """Save a Python results dictionary to a JSON file"""
         file_name = f"{RESULTS_DIR}/{self.tag}.json"
-        with open(file_name, "wb") as fid:
-            pickle.dump(dict, fid)
+        with open(file_name, "w") as fid:
+            json.dump(j_dict, fid)
 
-        print(f"Results have been saved to: {file_name}")
-        print(dict)
+        print(f"\n Results have been saved to: {file_name}")
+        print(j_dict)
 
     def save_model(self):
         """Save trained model to local storage"""
@@ -146,7 +145,7 @@ class Experiment:
         with open(file_name, "wb") as fid:
             pickle.dump(self.trained_model, fid)
 
-        print(f"Model has been saved to: {file_name}")
+        print(f"\n Model has been saved to: {file_name}")
 
 
 def _parse_args() -> argparse.Namespace:
@@ -157,21 +156,21 @@ def _parse_args() -> argparse.Namespace:
         "--data",
         type=str,
         default="baseline",
-        help="Provide the directory to the training/split datasets",
+        help="Provide the subdirectory name for the training/split datasets.",
     )
 
     parser.add_argument(
         "--algo",
         type=str,
         default="Logistic",
-        help="Provide a specific algorithm you wish to use",
+        help="Provide a specific algorithm you wish to fit to the data.",
     )
 
     parser.add_argument(
         "--tag",
         type=str,
         default="baseline",
-        help="Provide the tag name for this model training run.",
+        help="Provide the tag name associated with this experiment.",
     )
 
     return parser.parse_args()

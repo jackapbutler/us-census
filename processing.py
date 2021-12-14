@@ -117,6 +117,8 @@ if __name__ == "__main__":
     # split
     X, y = split_features_and_labels(df)
 
+    # save bias columns
+
     # process
     X = one_hot_encode(X)
     X = scale_features(X)
