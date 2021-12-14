@@ -1,10 +1,13 @@
 """Module for cleaning and processing US census data"""
 from typing import Tuple
+import argparse
+import pathlib
 import pandas as pd
 import sklearn.preprocessing as sk_pre
 import sklearn.model_selection as mod_sel
 
-RAW_DATA = "data/us_census.csv"
+RAW_DATA = "data/raw/us_census.csv"
+PROCESSED_DIR = "data/processed"
 LABEL = "label"
 LABEL_DICT = {" - 50000.": 0, " 50000+.": 1}
 
@@ -67,25 +70,59 @@ def split_features_and_labels(data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Seri
 
 def scale_features(X: pd.DataFrame) -> pd.DataFrame:
     """Scale all feature variables"""
+    print("Scaling feature variables.")
     scaler = sk_pre.StandardScaler()
     scaled_X = pd.DataFrame(scaler.fit_transform(X), columns=X.columns)
     return scaled_X
 
 
+def save_data(
+    dir: str, X_tr: pd.DataFrame, y_tr: pd.Series, X_te: pd.DataFrame, y_te: pd.Series
+) -> None:
+    """Save a set of training and test data to the data/processing directory"""
+    file_path: str = f"{PROCESSED_DIR}/{dir}/"
+    output_dir = pathlib.Path(file_path)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    print(f"Saving training and testing datasets to {file_path}")
+
+    X_tr.to_csv(file_path + "X_tr.csv", index=False)
+    y_tr.to_csv(file_path + "y_tr.csv", index=False)
+    X_te.to_csv(file_path + "X_te.csv", index=False)
+    y_te.to_csv(file_path + "y_te.csv", index=False)
+
+
+def _parse_args():
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--name",
+        type=str,
+        default="baseline",
+        help="Provide the name of this processed train/test split (to be saved within the data/processed directory).",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
+    args = _parse_args()
+
     # read data
     df = pd.read_csv(RAW_DATA)
     missing_values_report(df)
 
     # encode columns
     encoded_df = encode_labels(df)
-    df = one_hot_encode(df)
 
-    # split & process
+    # split
     X, y = split_features_and_labels(df)
+
+    # process
+    X = one_hot_encode(X)
     X = scale_features(X)
     X_tr, X_te, y_tr, y_te = mod_sel.train_test_split(
         X, y, test_size=0.3, random_state=0
     )
 
     # save data
+    save_data(args.name, X_tr, y_tr, X_te, y_te)
