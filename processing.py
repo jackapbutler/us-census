@@ -4,7 +4,7 @@ import argparse
 import pathlib
 import pandas as pd
 import sklearn.preprocessing as sk_pre
-import sklearn.model_selection as mod_sel
+import sklearn.model_selection as sk_mod
 
 RAW_DATA = "data/raw/us_census.csv"
 PROCESSED_DIR = "data/processed"
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     # process
     X = one_hot_encode(X)
     X = scale_features(X)
-    X_tr, X_te, y_tr, y_te = mod_sel.train_test_split(
+    X_tr, X_te, y_tr, y_te = sk_mod.train_test_split(
         X, y, test_size=0.3, random_state=0, shuffle=False
     )
 

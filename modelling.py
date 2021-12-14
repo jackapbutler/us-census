@@ -2,11 +2,12 @@
 import abc
 import argparse
 import os
-from typing import Dict
+from typing import Dict, Tuple, List
 import pickle
 import json
 import pandas as pd
 import numpy as np
+import sklearn.model_selection as sk_mod
 import sklearn.metrics as sk_metrics
 import sklearn.linear_model as sk_lin
 import sklearn.linear_model._stochastic_gradient as sk_sgd
@@ -71,12 +72,13 @@ class Model(abc.ABC):
 class Experiment:
     """Class to run a machine learning experiment"""
 
-    def __init__(self, data_dir, algorithm_name, tag) -> None:
+    def __init__(self, data_dir, algorithm_name, tag, kfolds=10) -> None:
         self.data_dir: str = data_dir
         self.dataset_name: str = self.data_dir.split("/")[-1]
         self.algorithm_name: str = algorithm_name
         self.algorithm: Model = MODELS.get(self.algorithm_name)
-        self.tag: str = tag
+        self.tag: str = (tag,)
+        self.K: int = kfolds
 
     def run(self):
         """Run experiment"""
@@ -91,6 +93,27 @@ class Experiment:
 
         self.save_results()
         self.save_model()
+
+    def kfold_evaluation(
+        self, X: pd.DataFrame, y: np.ndarray
+    ) -> Tuple[List[Dict], List[Dict]]:
+        """K-Fold cross validation training of a model"""
+        kfold = sk_mod.KFold(n_splits=self.K)
+
+        print(f"\n Starting {str(self.K)}-Fold cross validation evaluation.")
+        train_metrics = []
+        val_metrics = []
+
+        for train, val in kfold.split(X):
+            model = self.algorithm.fit(X[train], y[train])
+
+            pred_tr = model.predict(y[train])
+            pred_val = model.predict(y[val])
+
+            train_metrics.append(self.generate_metrics(y[train], pred_tr))
+            val_metrics.append(self.generate_metrics(y[val], pred_val))
+
+        return train_metrics, val_metrics
 
     def load_training_datasets(self):
         """Load training and test datasets from local storage"""
@@ -120,12 +143,25 @@ class Experiment:
         """Generate a dictionary of common classification metrics"""
         return {name: str(metric(truth, preds)) for name, metric in METRICS.items()}
 
+    def generate_kfold_metrics(kfold_metrics: List[Dict]):
+        """Generate a dictionary of avg,min,max,std for each classification metric"""
+        metrics_summary = {}
+        for name in METRICS.key():
+            metrics_summary[name] = {
+                "avg": sum(kfold_metrics, key=lambda x: x[name]) / len(kfold_metrics),
+                "min": min(kfold_metrics, key=lambda x: x[name]),
+                "max": max(kfold_metrics, key=lambda x: x[name]),
+            }
+
     def save_results(self):
         """Saving the experiment results to a certain folder"""
+        train_metrics, val_metrics = self.kfold_evaluation(self.X_tr, self.y_tr)
+
         results_dict: Dict = {
             "dataset": self.data_dir,
             "algorithm": self.algorithm_name,
-            "training": self.generate_metrics(self.y_tr, self.y_tr_pred),
+            "training": self.generate_kfold_metrics(train_metrics),
+            "validation": self.generate_kfold_metrics(val_metrics),
             "testing": self.generate_metrics(self.y_te, self.y_te_pred),
         }
         self.save_dict_to_json(results_dict)
