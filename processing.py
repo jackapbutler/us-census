@@ -70,7 +70,7 @@ def split_features_and_labels(data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Seri
 
 def scale_features(X: pd.DataFrame) -> pd.DataFrame:
     """Scale all feature variables"""
-    print("Scaling feature variables.")
+    print("\n Scaling feature variables.")
     scaler = sk_pre.StandardScaler()
     scaled_X = pd.DataFrame(scaler.fit_transform(X), columns=X.columns)
     return scaled_X
@@ -83,7 +83,7 @@ def save_data(
     file_path: str = f"{PROCESSED_DIR}/{dir}/"
     output_dir = pathlib.Path(file_path)
     output_dir.mkdir(parents=True, exist_ok=True)
-    print(f"Saving training and testing datasets to {file_path}")
+    print(f"\n Saving training and testing datasets to {file_path}")
 
     X_tr.to_csv(file_path + "X_tr.csv", index=False)
     y_tr.to_csv(file_path + "y_tr.csv", index=False)
@@ -91,15 +91,15 @@ def save_data(
     y_te.to_csv(file_path + "y_te.csv", index=False)
 
 
-def _parse_args():
+def _parse_args() -> argparse.Namespace:
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "--name",
+        "--tag",
         type=str,
         default="baseline",
-        help="Provide the name of this processed train/test split (to be saved within the data/processed directory).",
+        help="Provide the tag name for this processed train/test split (to be saved within the data/processed directory).",
     )
     return parser.parse_args()
 
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     missing_values_report(df)
 
     # encode columns
-    encoded_df = encode_labels(df)
+    df = encode_labels(df)
 
     # split
     X, y = split_features_and_labels(df)
@@ -121,8 +121,8 @@ if __name__ == "__main__":
     X = one_hot_encode(X)
     X = scale_features(X)
     X_tr, X_te, y_tr, y_te = mod_sel.train_test_split(
-        X, y, test_size=0.3, random_state=0
+        X, y, test_size=0.3, random_state=0, shuffle=False
     )
 
     # save data
-    save_data(args.name, X_tr, y_tr, X_te, y_te)
+    save_data(args.tag, X_tr, y_tr, X_te, y_te)
