@@ -1,0 +1,91 @@
+"""Module for cleaning and processing US census data"""
+from typing import Tuple
+import pandas as pd
+import sklearn.preprocessing as sk_pre
+import sklearn.model_selection as mod_sel
+
+RAW_DATA = "data/us_census.csv"
+LABEL = "label"
+LABEL_DICT = {" - 50000.": 0, " 50000+.": 1}
+
+
+def missing_values_report(df: pd.DataFrame):
+    """Create missing value report for a DataFrame"""
+    mis_val = df.isnull().sum()
+    mis_val_percent = 100 * df.isnull().sum() / len(df)
+    mis_val_table = pd.concat([mis_val, mis_val_percent], axis=1)
+
+    mis_val_table_ren_columns = mis_val_table.rename(
+        columns={0: "Missing Values", 1: "% of Total Values"}
+    )
+    mis_val_table_ren_columns = (
+        mis_val_table_ren_columns[mis_val_table_ren_columns.iloc[:, 1] != 0]
+        .sort_values("% of Total Values", ascending=False)
+        .round(1)
+    )
+
+    print(
+        "\n There are "
+        + str(mis_val_table_ren_columns.shape[0])
+        + " columns that have missing values. \n",
+        mis_val_table_ren_columns,
+    )
+
+
+def encode_labels(data: pd.DataFrame) -> pd.DataFrame:
+    """Function for encoding categorical labels according to a mapping dictionary"""
+    # encode labels
+    print(f"\n Replacing the column {LABEL} according to mapping {LABEL_DICT}")
+    df = data.replace({LABEL: LABEL_DICT})
+    return df
+
+
+def one_hot_encode(data: pd.DataFrame) -> pd.DataFrame:
+    """Encodes any non-numerical columns via one-hot encoding"""
+    numerics = ["int16", "int32", "int64", "float16", "float32", "float64"]
+    non_numeric = data.select_dtypes(exclude=numerics)
+
+    one_hot_cols = list(non_numeric.columns)
+    df = pd.get_dummies(data=data, columns=one_hot_cols, dtype=float)
+
+    print("\n One-hot encoded columns; \n", one_hot_cols)
+    print("Increased dimensions from ", len(data.columns), " to ", len(df.columns))
+    return df
+
+
+def split_features_and_labels(data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
+    """Splitting a dataframe into features and labels"""
+    # split features and labels
+    X = data.drop([LABEL], axis=1)
+    y = data[LABEL]
+
+    print("\n Splitting the dataframe into features and labels")
+    print("Features: ", list(X.columns))
+    print("Label: ", LABEL)
+    return X, y
+
+
+def scale_features(X: pd.DataFrame) -> pd.DataFrame:
+    """Scale all feature variables"""
+    scaler = sk_pre.StandardScaler()
+    scaled_X = pd.DataFrame(scaler.fit_transform(X), columns=X.columns)
+    return scaled_X
+
+
+if __name__ == "__main__":
+    # read data
+    df = pd.read_csv(RAW_DATA)
+    missing_values_report(df)
+
+    # encode columns
+    encoded_df = encode_labels(df)
+    df = one_hot_encode(df)
+
+    # split & process
+    X, y = split_features_and_labels(df)
+    X = scale_features(X)
+    X_tr, X_te, y_tr, y_te = mod_sel.train_test_split(
+        X, y, test_size=0.3, random_state=0
+    )
+
+    # save data
