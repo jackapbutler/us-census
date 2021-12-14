@@ -84,7 +84,7 @@ class Experiment:
         """Run experiment"""
         self.load_training_datasets()
 
-        print(f"Fitting algorithm {self.algorithm_name} to the data.")
+        print(f"\n Fitting algorithm {self.algorithm_name} to the data.")
         self.trained_model = self.algorithm.fit(self.X_tr, self.y_tr)
 
         print("\n Using the trained model to predict the test set.")
@@ -105,10 +105,10 @@ class Experiment:
         val_metrics = []
 
         for train, val in kfold.split(X):
-            model = self.algorithm.fit(X[train], y[train])
+            model = self.algorithm.fit(X.iloc[train], y[train])
 
-            pred_tr = model.predict(y[train])
-            pred_val = model.predict(y[val])
+            pred_tr = model.predict(X.iloc[train])
+            pred_val = model.predict(X.iloc[val])
 
             train_metrics.append(self.generate_metrics(y[train], pred_tr))
             val_metrics.append(self.generate_metrics(y[val], pred_val))
@@ -141,17 +141,18 @@ class Experiment:
         preds: np.ndarray,
     ) -> Dict:
         """Generate a dictionary of common classification metrics"""
-        return {name: str(metric(truth, preds)) for name, metric in METRICS.items()}
+        return {name: float(metric(truth, preds)) for name, metric in METRICS.items()}
 
-    def generate_kfold_metrics(kfold_metrics: List[Dict]):
+    def generate_kfold_metrics(self, kfold_metrics: List[Dict]):
         """Generate a dictionary of avg,min,max,std for each classification metric"""
         metrics_summary = {}
-        for name in METRICS.key():
+        for name in METRICS.keys():
             metrics_summary[name] = {
-                "avg": sum(kfold_metrics, key=lambda x: x[name]) / len(kfold_metrics),
-                "min": min(kfold_metrics, key=lambda x: x[name]),
-                "max": max(kfold_metrics, key=lambda x: x[name]),
+                "avg": sum(d[name] for d in kfold_metrics) / self.K,
+                "min": min(d[name] for d in kfold_metrics),
+                "max": max(d[name] for d in kfold_metrics),
             }
+        return metrics_summary
 
     def save_results(self):
         """Saving the experiment results to a certain folder"""

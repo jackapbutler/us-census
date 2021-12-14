@@ -44,7 +44,7 @@ python3 -m processing --tag my_baseline
 
      b) Fit the name `--algo` model to the dataset (see `MODELS` for a range of choices).
 
-     c) Evaluate the training and test performance and save the results to `results/<tag>.json`.
+     c) Evaluate the training, validation and test performance and save the results to `results/<tag>.json`.
 
      d) Save the trained model under a directory called `models/<tag>.pkl`
 
