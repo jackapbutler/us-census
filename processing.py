@@ -101,6 +101,7 @@ def plot_pca(PCA: sk_decomp.PCA):
     plt.ylabel("Explained Variance")
     plt.xlabel("Components")
     plt.title("Cumulative Variance")
+    plt.axhline(y=MIN_PCA_VAR, color="red", linestyle="--")
     plt.show()
 
 
