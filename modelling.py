@@ -1,24 +1,22 @@
 """Module for fitting and evaluating models on US census data"""
-import abc
 import argparse
-import os
-from typing import Dict, Tuple, List
-import pickle
 import json
-import pandas as pd
+import os
+import pickle
+from typing import Dict, List, Tuple
+
 import numpy as np
-import sklearn.model_selection as sk_mod
-import sklearn.metrics as sk_metrics
+import pandas as pd
+import sklearn.ensemble as sk_ens
+import sklearn.gaussian_process as sk_gpc
 import sklearn.linear_model as sk_lin
 import sklearn.linear_model._stochastic_gradient as sk_sgd
-import sklearn.gaussian_process as sk_gpc
+import sklearn.metrics as sk_metrics
+import sklearn.model_selection as sk_mod
 import sklearn.neighbors as sk_neigh
 import sklearn.neural_network as sk_nn
-import sklearn.tree as sk_tree
 import sklearn.svm as sk_svm
-import sklearn.ensemble as sk_ens
-
-import processing
+import sklearn.tree as sk_tree
 
 # OR use voting classifiers
 # OR use deep learning
@@ -29,12 +27,10 @@ MODELS_DIR = "models"
 
 # models must have a fit and predict method
 MODELS = {
-    "Logistic": sk_lin.LogisticRegression(),
     "Ridge": sk_lin.RidgeClassifier(),
     "KNN": sk_neigh.KNeighborsClassifier(),
     "MLP": sk_nn.MLPClassifier(),
     "Tree": sk_tree.DecisionTreeClassifier(),
-    "Tree+": sk_tree.ExtraTreeClassifier(),
     "SGD": sk_sgd.SGDClassifier(),
     "GPC": sk_gpc.GaussianProcessClassifier(),
     "SVC": sk_svm.SVC(),
@@ -52,23 +48,6 @@ METRICS = {
 }
 
 
-class Model(abc.ABC):
-    """Abstract base class for implementing machine learning models"""
-
-    def __init__(self) -> None:
-        pass
-
-    @abc.abstractmethod
-    def fit(self, X, y):
-        """Abstract method for fitting a machine learning model"""
-        pass
-
-    @abc.abstractmethod
-    def predict(self, y):
-        """Abstract method for predicting the output from the model"""
-        pass
-
-
 class Experiment:
     """Class to run a machine learning experiment"""
 
@@ -76,8 +55,8 @@ class Experiment:
         self.data_dir: str = data_dir
         self.dataset_name: str = self.data_dir.split("/")[-1]
         self.algorithm_name: str = algorithm_name
-        self.algorithm: Model = MODELS.get(self.algorithm_name)
-        self.tag: str = (tag,)
+        self.algorithm = MODELS.get(self.algorithm_name)
+        self.tag: str = tag
         self.K: int = kfolds
 
     def run(self):
@@ -130,10 +109,6 @@ class Experiment:
             raise FileNotFoundError(
                 f"Can't find training datasets folder called {folder}."
             )
-
-    def load_original_dataset(self):
-        """Load the original preprocessed dataset"""
-        self.original_df: pd.DataFrame = pd.read_csv(processing.RAW_DATA)
 
     def generate_metrics(
         self,

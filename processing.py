@@ -1,15 +1,20 @@
 """Module for cleaning and processing US census data"""
-from typing import Tuple
 import argparse
 import pathlib
+from typing import Tuple
+
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
-import sklearn.preprocessing as sk_pre
+import sklearn.decomposition as sk_decomp
 import sklearn.model_selection as sk_mod
+import sklearn.preprocessing as sk_pre
 
 RAW_DATA = "data/raw/us_census.csv"
 PROCESSED_DIR = "data/processed"
 LABEL = "label"
 LABEL_DICT = {" - 50000.": 0, " 50000+.": 1}
+MIN_PCA_VAR = 0.95
 
 
 def missing_values_report(df: pd.DataFrame):
@@ -26,6 +31,7 @@ def missing_values_report(df: pd.DataFrame):
         .sort_values("% of Total Values", ascending=False)
         .round(1)
     )
+    print(f"In total we have {len(df)} rows and {len(list(df.columns))} columns.")
 
     print(
         "\n There are "
@@ -76,6 +82,28 @@ def scale_features(X: pd.DataFrame) -> pd.DataFrame:
     return scaled_X
 
 
+def apply_pca(features_df: pd.DataFrame) -> pd.DataFrame:
+    """Apply Principal Component Analysis to reduce the dimension of the feature set"""
+    PCA = sk_decomp.PCA(MIN_PCA_VAR)
+    reduced_features = PCA.fit_transform(features_df)
+    reduced_df = pd.DataFrame(reduced_features).add_prefix("PCA_Comp_")
+
+    plot_pca(PCA)
+    print(
+        f"\n After applying PCA (95% threshold) the number of features was reduced from {len(features_df.columns)} to {len(reduced_df.columns)}"
+    )
+    return reduced_df
+
+
+def plot_pca(PCA: sk_decomp.PCA):
+    """Plot a line chart of explained variance across number of components"""
+    plt.plot(np.cumsum(PCA.explained_variance_ratio_))
+    plt.ylabel("Explained Variance")
+    plt.xlabel("Components")
+    plt.title("Cumulative Variance")
+    plt.show()
+
+
 def save_data(
     dir: str, X_tr: pd.DataFrame, y_tr: pd.Series, X_te: pd.DataFrame, y_te: pd.Series
 ) -> None:
@@ -94,6 +122,13 @@ def save_data(
 def _parse_args() -> argparse.Namespace:
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--use_pca",
+        type=bool,
+        default=False,
+        help="Do you want to apply PCA dimensionality reduction to the feature set?",
+    )
 
     parser.add_argument(
         "--tag",
@@ -117,14 +152,17 @@ if __name__ == "__main__":
     # split
     X, y = split_features_and_labels(df)
 
-    # save bias columns
-
     # process
     X = one_hot_encode(X)
     X = scale_features(X)
+
+    # apply pca
+    if args.use_pca:
+        X = apply_pca(X)
+
     X_tr, X_te, y_tr, y_te = sk_mod.train_test_split(
         X, y, test_size=0.3, random_state=0, shuffle=False
     )
 
     # save data
-    save_data(args.tag, X_tr, y_tr, X_te, y_te)
+    # save_data(args.tag, X_tr, y_tr, X_te, y_te)

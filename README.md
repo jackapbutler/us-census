@@ -29,10 +29,12 @@ There are three main pieces of this project:
 
      c) One-hot encode and scale the relevant feature variables.
 
-     d) Split and Save the train and test datasets to a folder called `data/processed/<tag>/`.
+     d) Apply PCA-based dimensionality reduction (if requested)
+
+     e) Split and Save the train and test datasets to a folder called `data/processed/<tag>/`.
 
 ```shell
-python3 -m processing --tag my_baseline
+python3 -m processing --tag my_baseline --use_pca False
 ```
 
 3. [Modelling](modelling.py)
