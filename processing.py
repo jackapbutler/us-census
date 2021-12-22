@@ -166,4 +166,4 @@ if __name__ == "__main__":
     )
 
     # save data
-    # save_data(args.tag, X_tr, y_tr, X_te, y_te)
+    save_data(args.tag, X_tr, y_tr, X_te, y_te)

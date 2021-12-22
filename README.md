@@ -16,9 +16,9 @@ conda env create -f env.yml
 
 There are three main pieces of this project:
 
-1. [Exploratory Data Analysis notebook](eda.ipynb).
+1. [Exploratory Data Analysis](eda.ipynb).
 
-2. [Data Processing script](processing.py)
+2. [Data Processing](processing.py)
 
    - This handles all the loading, processing and transformations associated with the project.
    - Once executed it will run the following:
