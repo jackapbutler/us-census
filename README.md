@@ -1,6 +1,6 @@
-# us-census
+# US Census Income Analysis
 
-Predicting high/low salaries from US census data.
+Predicting high / low salary band for a person based on US census data.
 
 # Python Environment
 
