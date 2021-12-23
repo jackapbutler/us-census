@@ -51,7 +51,7 @@ python3 -m processing --tag my_baseline --use_pca False
      d) Save the trained model under a directory called `models/<tag>.pkl`
 
 ```shell
-python3 -m modelling --data baseline --algo Logistic --tag baseline_model
+python3 -m modelling --data baseline --algo Ridge --tag baseline_model
 ```
 
 # Code Formatting
